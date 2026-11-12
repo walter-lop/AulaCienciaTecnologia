@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% block titulo %}Inicio{% endblock %}
+
+{% block contenido %}
+<section class="hero">
+  <div>
+    <span class="eyebrow">
+      <svg class="icono" style="width:13px;height:13px" aria-hidden="true"><use href="#i-atomo"></use></svg>
+      Ciencia y Tecnología · Secundaria
+    </span>
+    <h1>Hola, profe {{ cfg.docente.split(' ')[0] if cfg.docente else 'docente' }}.</h1>
+    <p>
+      Todo tu registro de aula en un solo lugar: estudiantes, padres de familia,
+      calificaciones, asistencia y convivencia de 1.° a 5.° grado.
+    </p>
+    <div class="hero-acciones">
+      <a class="btn btn-primario" href="{{ url_for('estudiante_nuevo') }}">
+        <svg class="icono" aria-hidden="true"><use href="#i-mas"></use></svg>
+        Registrar estudiante
+      </a>
+      <a class="btn btn-contorno" href="{{ url_for('escaner') }}">
+        <svg class="icono" aria-hidden="true"><use href="#i-escaner"></use></svg>
+        Escanear DNI
+      </a>
+    </div>
+  </div>
+
+  <aside class="hero-panel" aria-label="Datos del día">
+    <div>
+      <div class="fecha-dia">{{ hoy[8:10] }}</div>
+      <div class="fecha-mes">{{ hoy|fecha_larga }}</div>
+    </div>
+    <div class="linea" aria-hidden="true"></div>
+    <div class="pila" style="gap:7px">
+      <div class="dato"><span>Docente</span><strong>{{ cfg.docente }}</strong></div>
+      <div class="dato"><span>I.E.</span><strong>{{ cfg.ie_nombre }}</strong></div>
+      <div class="dato"><span>Año escolar</span><strong>{{ cfg.anio }}</strong></div>
+    </div>
+  </aside>
+</section>
+
+<section class="stats" aria-label="Resumen general">
+  <article class="stat">
+    <span class="stat-icono">
+      <svg class="icono" aria-hidden="true"><use href="#i-usuarios"></use></svg>
+    </span>
+    <div>
+      <div class="stat-etiqueta">Estudiantes</div>
+      <div class="stat-valor">{{ total_estudiantes }}</div>
+      <div class="stat-pista">registrados en 1.° a 5.°</div>
+    </div>
+  </article>
+
+  <article class="stat">
+    <span class="stat-icono azul">
+      <svg class="icono" aria-hidden="true"><use href="#i-libro"></use></svg>
+    </span>
+    <div>
+      <div class="stat-etiqueta">Secciones</div>
+      <div class="stat-valor">{{ total_secciones }}</div>
+      <div class="stat-pista">con estudiantes registrados</div>
+    </div>
+  </article>
+
+  <article class="stat">
+    <span class="stat-icono ambar">
+      <svg class="icono" aria-hidden="true"><use href="#i-asistencia"></use></svg>
+    </span>
+    <div>
+      <div class="stat-etiqueta">Asistencia hoy</div>
+      <div class="stat-valor">
+        {% if porcentaje_hoy is not none %}
+          {{ porcentaje_hoy }}<small>%</small>
+        {% else %}
+          —<small> sin registrar</small>
+        {% endif %}
+      </div>
+      <div class="stat-pista">
+        {% if marcados_hoy %}
+          {{ efectivos_hoy }} de {{ marcados_hoy }} registros de hoy
+        {% else %}
+          aún no se toma asistencia
+        {% endif %}
+      </div>
+    </div>
+  </article>
+
+  <article class="stat">
+    <span class="stat-icono rosa">
+      <svg class="icono" aria-hidden="true"><use href="#i-corazon"></use></svg>
+    </span>
+    <div>
+      <div class="stat-etiqueta">Convivencia</div>
+      <div class="stat-valor">{{ incidencias_mes }}</div>
+      <div class="stat-pista">registros este mes</div>
+    </div>
+  </article>
+</section>
+
+{% if total_estudiantes == 0 %}
+<section class="panel margen-arriba">
+  <div class="panel-cabecera">
+    <div class="panel-titulo-icono">
+      <svg class="icono" aria-hidden="true"><use href="#i-estrella"></use></svg>
+      <div>
+        <h2>Empieza en tres pasos</h2>
+        <p>La base de datos está lista. Solo faltan tus estudiantes.</p>
+      </div>
+    </div>
+  </div>
+  <div class="onboarding">
+    <div class="onboarding-paso">
+      <span class="numero">1</span>
+      <strong>Registra al estudiante</strong>
+      <p>Nombre, apellidos, grado, sección y DNI. También puedes usar el escáner.</p>
+    </div>
+    <div class="onboarding-paso">
+      <span class="numero">2</span>
+      <strong>Agrega a los padres</strong>
+      <p>Nombre y teléfono del apoderado para comunicarte con la familia.</p>
+    </div>
+    <div class="onboarding-paso">
+      <span class="numero">3</span>
+      <strong>Empieza a registrar</strong>
+      <p>Calificaciones por competencia, asistencia diaria y convivencia.</p>
+    </div>
+  </div>
+  <div class="fila margen-arriba">
+    <a class="btn btn-primario" href="{{ url_for('estudiante_nuevo') }}">
+      <svg class="icono" aria-hidden="true"><use href="#i-mas"></use></svg>
+      Registrar primer estudiante
+    </a>
+    <a class="btn btn-contorno" href="{{ url_for('escaner') }}">
+      <svg class="icono" aria-hidden="true"><use href="#i-escaner"></use></svg>
+      Abrir escáner de DNI
+    </a>
+  </div>
+</section>
+{% endif %}
+
+<div class="dashboard-grid">
+  <div class="pila">
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div>
+          <h2>Estudiantes por grado</h2>
+          <p>Distribución de tu carga académica.</p>
+        </div>
+        <a class="btn btn-contorno btn-sm" href="{{ url_for('estudiantes') }}">Ver lista</a>
+      </div>
+      <div class="barras">
+        {% for grado in GRADOS %}
+          <div class="barra-fila">
+            <span>{{ grado }}.° grado</span>
+            <div class="barra" role="img" aria-label="{{ por_grado[grado] }} estudiantes en {{ grado }}.° grado">
+              <span style="width: {{ (por_grado[grado] / max_grado * 100)|round(0) if max_grado else 0 }}%"></span>
+            </div>
+            <span>{{ por_grado[grado] }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div>
+          <h2>Actividad reciente</h2>
+          <p>Últimos registros de comportamiento y faltas.</p>
+        </div>
+      </div>
+
+      {% if recientes %}
+        <div class="actividad">
+          {% for r in recientes %}
+            {% if r.clase == 'comportamiento' %}
+              {% set info = TIPOS_COMPORTAMIENTO.get(r.tipo) %}
+              {% set etiqueta = info.nombre if info else r.tipo %}
+            {% else %}
+              {% set etiqueta = TIPOS_FALTA.get(r.tipo, r.tipo) %}
+            {% endif %}
+            <div class="actividad-item">
+              <span class="actividad-punto {{ 'ambar' if r.tipo in ['observacion', 'tardanza', 'leve'] else 'rojo' if r.tipo in ['llamado', 'grave', 'muy_grave', 'inasistencia'] or r.clase == 'falta' else '' }}" aria-hidden="true"></span>
+              <div class="actividad-texto">
+                <strong>{{ r.apellidos }}, {{ r.nombres }}</strong>
+                <span class="suave"> · {{ etiqueta }}</span>
+                <p>{{ r.descripcion }}</p>
+                <div class="meta">
+                  <span class="actividad-fecha">{{ r.grado }}.° {{ r.seccion }} · {{ r.fecha|fecha }}</span>
+                  <a class="enlace-simple pequeno" href="{{ url_for('estudiante_detalle', estudiante_id=r.estudiante_id) }}">Ver ficha</a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="vacio" style="padding: 18px 10px">
+          <div class="vacio-icono">
+            <svg class="icono" aria-hidden="true"><use href="#i-corazon"></use></svg>
+          </div>
+          <h3>Sin novedades por ahora</h3>
+          <p>Cuando registres un mérito, una observación o una falta, aparecerá aquí.</p>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="pila">
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div>
+          <h2>Accesos rápidos</h2>
+          <p>Lo que más usarás en el día a día.</p>
+        </div>
+      </div>
+      <div class="acciones-grid">
+        <a class="accion" href="{{ url_for('calificaciones') }}">
+          <span class="accion-icono"><svg class="icono" aria-hidden="true"><use href="#i-notas"></use></svg></span>
+          <span>
+            <strong>Calificaciones</strong>
+            <small>Por competencia y bimestre</small>
+          </span>
+        </a>
+        <a class="accion" href="{{ url_for('asistencia') }}">
+          <span class="accion-icono"><svg class="icono" aria-hidden="true"><use href="#i-asistencia"></use></svg></span>
+          <span>
+            <strong>Asistencia</strong>
+            <small>Registro diario por sección</small>
+          </span>
+        </a>
+        <a class="accion" href="{{ url_for('comportamiento') }}">
+          <span class="accion-icono"><svg class="icono" aria-hidden="true"><use href="#i-corazon"></use></svg></span>
+          <span>
+            <strong>Comportamiento</strong>
+            <small>Méritos y observaciones</small>
+          </span>
+        </a>
+        <a class="accion" href="{{ url_for('faltas') }}">
+          <span class="accion-icono"><svg class="icono" aria-hidden="true"><use href="#i-alerta"></use></svg></span>
+          <span>
+            <strong>Faltas</strong>
+            <small>Incidencias y medidas</small>
+          </span>
+        </a>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div class="panel-titulo-icono">
+          <svg class="icono" aria-hidden="true"><use href="#i-respaldo"></use></svg>
+          <div>
+            <h2>Tus datos, seguros</h2>
+            <p>Todo se guarda en tu computadora.</p>
+          </div>
+        </div>
+      </div>
+      <p class="pequeno suave">
+        La información vive en un archivo SQLite dentro de la carpeta
+        <strong>instance</strong>. Descarga un respaldo de vez en cuando y guárdalo
+        en un lugar seguro.
+      </p>
+      <div class="fila margen-arriba">
+        <a class="btn btn-contorno btn-sm" href="{{ url_for('respaldo') }}">
+          <svg class="icono" aria-hidden="true"><use href="#i-descargar"></use></svg>
+          Descargar respaldo
+        </a>
+        <a class="btn btn-fantasma btn-sm" href="{{ url_for('configuracion') }}">
+          <svg class="icono" aria-hidden="true"><use href="#i-ajustes"></use></svg>
+          Configurar I.E.
+        </a>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

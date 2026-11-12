@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block titulo %}Faltas{% endblock %}
+
+{% block contenido %}
+<div class="barra-lista">
+  <div>
+    <h1>Registro de faltas</h1>
+    <p>Inasistencias injustificadas, tardanzas e incidencias disciplinarias.</p>
+  </div>
+  <a class="btn btn-contorno" href="{{ url_for('estudiantes') }}">
+    <svg class="icono" aria-hidden="true"><use href="#i-usuarios"></use></svg>
+    Ver estudiantes
+  </a>
+</div>
+
+<div class="convivencia-grid">
+  <section class="panel convivencia-form">
+    <div class="panel-cabecera">
+      <div class="panel-titulo-icono">
+        <svg class="icono" aria-hidden="true"><use href="#i-alerta"></use></svg>
+        <div>
+          <h2>Nueva falta</h2>
+          <p>Registra la incidencia y la medida adoptada.</p>
+        </div>
+      </div>
+    </div>
+
+    {% if estudiantes_todos %}
+      <form class="formulario" method="post" action="{{ url_for('faltas') }}">
+        <div class="campo">
+          <label for="ft-estudiante">Estudiante <span class="req">*</span></label>
+          <select id="ft-estudiante" name="estudiante_id" required>
+            <option value="">Selecciona un estudiante</option>
+            {% for e in estudiantes_todos %}
+              <option value="{{ e.id }}" {{ 'selected' if preseleccionado == e.id }}>
+                {{ e.grado }}.° {{ e.seccion }} — {{ e.apellidos }}, {{ e.nombres }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="grid-2">
+          <div class="campo">
+            <label for="ft-fecha">Fecha <span class="req">*</span></label>
+            <input id="ft-fecha" type="date" name="fecha" value="{{ hoy }}" required>
+          </div>
+          <div class="campo">
+            <label for="ft-tipo">Tipo <span class="req">*</span></label>
+            <select id="ft-tipo" name="tipo" required>
+              {% for clave, nombre in TIPOS_FALTA.items() %}
+                <option value="{{ clave }}">{{ nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="ft-descripcion">Descripción <span class="req">*</span></label>
+          <textarea id="ft-descripcion" name="descripcion" maxlength="1000" required placeholder="Describe la falta de forma objetiva y concreta."></textarea>
+        </div>
+
+        <div class="campo">
+          <label for="ft-medida">Medida correctiva o acuerdo</label>
+          <textarea id="ft-medida" name="medida" maxlength="500" placeholder="Ej. Diálogo con el apoderado, compromiso escrito…"></textarea>
+        </div>
+
+        <label class="check">
+          <input type="checkbox" name="comunicado" value="1">
+          Se comunicó a la familia
+        </label>
+
+        <button class="btn btn-primario btn-bloque" type="submit">
+          <svg class="icono" aria-hidden="true"><use href="#i-guardar"></use></svg>
+          Guardar falta
+        </button>
+      </form>
+    {% else %}
+      <div class="vacio" style="padding: 18px 10px">
+        <div class="vacio-icono"><svg class="icono" aria-hidden="true"><use href="#i-usuarios"></use></svg></div>
+        <h3>Sin estudiantes registrados</h3>
+        <p>Primero registra estudiantes para poder anotar sus faltas.</p>
+        <a class="btn btn-primario btn-sm" href="{{ url_for('estudiante_nuevo') }}">Registrar estudiante</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <div class="panel-cabecera">
+      <div class="panel-titulo-icono">
+        <svg class="icono" aria-hidden="true"><use href="#i-libro"></use></svg>
+        <div>
+          <h2>Faltas registradas</h2>
+          <p>{{ registros|length }} registro{{ 's' if registros|length != 1 }} encontrado{{ 's' if registros|length != 1 }}.</p>
+        </div>
+      </div>
+    </div>
+
+    <form class="filtros" method="get" action="{{ url_for('faltas') }}">
+      <div class="campo">
+        <label for="ft-f-grado">Grado</label>
+        <select id="ft-f-grado" name="grado" data-auto-submit>
+          <option value="">Todos</option>
+          {% for g in GRADOS %}
+            <option value="{{ g }}" {{ 'selected' if grado == g }}>{{ g }}.°</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label for="ft-f-seccion">Sección</label>
+        <select id="ft-f-seccion" name="seccion" data-auto-submit>
+          <option value="">Todas</option>
+          {% for s in SECCIONES %}
+            <option value="{{ s }}" {{ 'selected' if seccion == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label for="ft-f-tipo">Tipo</label>
+        <select id="ft-f-tipo" name="tipo" data-auto-submit>
+          <option value="">Todos</option>
+          {% for clave, nombre in TIPOS_FALTA.items() %}
+            <option value="{{ clave }}" {{ 'selected' if tipo == clave }}>{{ nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if grado or seccion or tipo %}
+        <a class="btn btn-fantasma" href="{{ url_for('faltas') }}">Limpiar</a>
+      {% endif %}
+    </form>
+
+    {% if registros %}
+      <div class="registros">
+        {% for f in registros %}
+          <article class="registro {{ f.tipo }}">
+            <div class="registro-cabecera">
+              <div>
+                <strong>
+                  <a href="{{ url_for('estudiante_detalle', estudiante_id=f.estudiante_id) }}" style="color: inherit">
+                    {{ f.apellidos }}, {{ f.nombres }}
+                  </a>
+                </strong>
+                <div class="meta">
+                  <span>{{ f.grado }}.° {{ f.seccion }}</span>
+                  <span>·</span>
+                  <span>{{ f.fecha|fecha }}</span>
+                  <span class="badge {{ 'estado-presente' if f.comunicado else 'estado-ausente' }}">
+                    {{ 'Comunicado' if f.comunicado else 'Sin comunicar' }}
+                  </span>
+                </div>
+              </div>
+              <div class="registro-acciones">
+                <span class="badge tipo-{{ f.tipo }}">{{ TIPOS_FALTA[f.tipo] }}</span>
+                <form method="post" action="{{ url_for('falta_eliminar', registro_id=f.id) }}" data-confirmar="¿Eliminar este registro de falta?">
+                  <button class="btn btn-fantasma btn-icono btn-sm" type="submit" title="Eliminar registro" aria-label="Eliminar falta de {{ f.nombres }} {{ f.apellidos }}">
+                    <svg class="icono" aria-hidden="true"><use href="#i-eliminar"></use></svg>
+                  </button>
+                </form>
+              </div>
+            </div>
+            <p>{{ f.descripcion }}</p>
+            {% if f.medida %}
+              <div class="medida"><strong>Medida:</strong> {{ f.medida }}</div>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="vacio" style="padding: 26px 10px">
+        <div class="vacio-icono"><svg class="icono" aria-hidden="true"><use href="#i-check"></use></svg></div>
+        <h3>Sin faltas registradas</h3>
+        <p>Cuando registres una inasistencia, tardanza o falta disciplinaria, aparecerá aquí.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

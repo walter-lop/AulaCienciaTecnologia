@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+
+{% block contenido %}
+<section class="panel">
+  <div class="error-pagina">
+    <div class="error-codigo">{{ codigo }}</div>
+    <h1>{{ titulo }}</h1>
+    <p>{{ mensaje }}</p>
+    <div class="fila">
+      <a class="btn btn-primario" href="{{ url_for('inicio') }}">
+        <svg class="icono" aria-hidden="true"><use href="#i-inicio"></use></svg>
+        Volver al inicio
+      </a>
+      <a class="btn btn-contorno" href="{{ url_for('estudiantes') }}">Ver estudiantes</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

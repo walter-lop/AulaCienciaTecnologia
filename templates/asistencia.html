@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block titulo %}Asistencia{% endblock %}
+
+{% block contenido %}
+<div class="barra-lista">
+  <div>
+    <h1>Asistencia</h1>
+    <p>Control diario por grado, sección y fecha.</p>
+  </div>
+  <a class="btn btn-contorno" href="{{ url_for('estudiantes') }}">
+    <svg class="icono" aria-hidden="true"><use href="#i-usuarios"></use></svg>
+    Ver estudiantes
+  </a>
+</div>
+
+{% if sin_datos %}
+  <section class="panel">
+    <div class="vacio">
+      <div class="vacio-icono"><svg class="icono" aria-hidden="true"><use href="#i-asistencia"></use></svg></div>
+      <h3>Aún no hay estudiantes para registrar asistencia</h3>
+      <p>Registra a tus estudiantes y podrás tomar asistencia por día, grado y sección.</p>
+      <a class="btn btn-primario" href="{{ url_for('estudiante_nuevo') }}">
+        <svg class="icono" aria-hidden="true"><use href="#i-mas"></use></svg>
+        Registrar estudiante
+      </a>
+    </div>
+  </section>
+{% else %}
+  <form class="filtros" method="get" action="{{ url_for('asistencia') }}">
+    <div class="campo">
+      <label for="a-grado">Grado</label>
+      <select id="a-grado" name="grado" data-auto-submit>
+        {% for g in GRADOS %}
+          <option value="{{ g }}" {{ 'selected' if grado == g }}>{{ g }}.° grado</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="campo">
+      <label for="a-seccion">Sección</label>
+      <select id="a-seccion" name="seccion" data-auto-submit>
+        {% for s in SECCIONES %}
+          <option value="{{ s }}" {{ 'selected' if seccion == s }}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="campo">
+      <label for="a-fecha">Fecha</label>
+      <input id="a-fecha" type="date" name="fecha" value="{{ fecha }}" data-auto-submit>
+    </div>
+    <button class="btn btn-secundario" type="submit">
+      <svg class="icono" aria-hidden="true"><use href="#i-buscar"></use></svg>
+      Ver día
+    </button>
+  </form>
+
+  {% if estudiantes %}
+    <div class="panel">
+      <div class="panel-cabecera">
+        <div class="panel-titulo-icono">
+          <svg class="icono" aria-hidden="true"><use href="#i-calendario"></use></svg>
+          <div>
+            <h2>{{ grado }}.° {{ seccion }} · {{ fecha|fecha_larga }}</h2>
+            <p>{{ estudiantes|length }} estudiante{{ 's' if estudiantes|length != 1 }} en la sección.</p>
+          </div>
+        </div>
+        <div class="fila">
+          <button class="btn btn-contorno btn-sm" type="button" data-marcar-todos="presente">Todos presentes</button>
+          <button class="btn btn-fantasma btn-sm" type="button" data-marcar-todos="ausente">Todos ausentes</button>
+        </div>
+      </div>
+
+      <div class="resumen-chips" id="resumen-asistencia" aria-label="Resumen de la selección actual">
+        <span class="badge estado-presente"><span data-cuenta="presente">{{ resumen.presente }}</span> presente{{ 's' if resumen.presente != 1 }}</span>
+        <span class="badge estado-tarde"><span data-cuenta="tarde">{{ resumen.tarde }}</span> tarde{{ 's' if resumen.tarde != 1 }}</span>
+        <span class="badge estado-ausente"><span data-cuenta="ausente">{{ resumen.ausente }}</span> ausente{{ 's' if resumen.ausente != 1 }}</span>
+        <span class="badge estado-justificado"><span data-cuenta="justificado">{{ resumen.justificado }}</span> justificado{{ 's' if resumen.justificado != 1 }}</span>
+        <span class="badge sin-nota">{{ sin_registrar }} sin registro guardado</span>
+      </div>
+
+      <form method="post" action="{{ url_for('asistencia') }}">
+        <input type="hidden" name="grado" value="{{ grado }}">
+        <input type="hidden" name="seccion" value="{{ seccion }}">
+        <input type="hidden" name="fecha" value="{{ fecha }}">
+
+        <div class="asistencia-lista">
+          {% for e in estudiantes %}
+            {% set registro = registros.get(e.id) %}
+            {% set estado_actual = registro.estado if registro else 'presente' %}
+            <div class="asistencia-item">
+              <div class="asistencia-persona">
+                <span class="avatar avatar-sm avatar-suave" aria-hidden="true">{{ e|iniciales }}</span>
+                <span>
+                  <strong>{{ e.apellidos }}, {{ e.nombres }}</strong>
+                  <small>{{ 'DNI ' ~ e.dni if e.dni else 'Sin DNI' }}</small>
+                </span>
+              </div>
+
+              <div class="estado-opciones" role="radiogroup" aria-label="Asistencia de {{ e.nombres }} {{ e.apellidos }}">
+                {% for clave, nombre in ESTADOS_ASISTENCIA.items() %}
+                  <input
+                    type="radio"
+                    id="estado-{{ e.id }}-{{ clave }}"
+                    name="estado_{{ e.id }}"
+                    value="{{ clave }}"
+                    {{ 'checked' if estado_actual == clave }}
+                  >
+                  <label class="estado-{{ clave }}" for="estado-{{ e.id }}-{{ clave }}">{{ nombre }}</label>
+                {% endfor %}
+              </div>
+
+              <div class="asistencia-obs">
+                <label class="sr-only" for="obs-{{ e.id }}">Observación de {{ e.nombres }} {{ e.apellidos }}</label>
+                <input id="obs-{{ e.id }}" type="text" name="obs_{{ e.id }}" value="{{ registro.observacion if registro and registro.observacion else '' }}" maxlength="200" placeholder="Observación (opcional)">
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="acciones-form">
+          <p class="ayuda" style="margin-right: auto">El resumen muestra la selección actual. Pulsa guardar para registrar la asistencia del día.</p>
+          <button class="btn btn-primario" type="submit">
+            <svg class="icono" aria-hidden="true"><use href="#i-guardar"></use></svg>
+            Guardar asistencia
+          </button>
+        </div>
+      </form>
+    </div>
+  {% else %}
+    <section class="panel">
+      <div class="vacio">
+        <div class="vacio-icono"><svg class="icono" aria-hidden="true"><use href="#i-usuarios"></use></svg></div>
+        <h3>No hay estudiantes en {{ grado }}.° {{ seccion }}</h3>
+        <p>Cambia de grado o sección, o registra estudiantes en esta sección.</p>
+        <div class="fila">
+          <a class="btn btn-contorno" href="{{ url_for('estudiantes', grado=grado, seccion=seccion) }}">Ver estudiantes</a>
+          <a class="btn btn-primario" href="{{ url_for('estudiante_nuevo') }}">
+            <svg class="icono" aria-hidden="true"><use href="#i-mas"></use></svg>
+            Registrar estudiante
+          </a>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+{% endif %}
+{% endblock %}

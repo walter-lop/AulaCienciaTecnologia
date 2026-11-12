@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block titulo %}Anexo de comportamiento · {{ estudiante.nombres }} {{ estudiante.apellidos }}{% endblock %}
+
+{% block contenido %}
+<div class="barra-impresion no-print">
+  <a class="btn btn-contorno" href="{{ url_for('estudiante_detalle', estudiante_id=estudiante.id) }}">
+    <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"></use></svg>
+    Volver a la ficha
+  </a>
+  <div class="fila">
+    <a class="btn btn-fantasma" href="{{ url_for('comportamiento', estudiante_id=estudiante.id) }}">Agregar registro</a>
+    <button class="btn btn-primario" type="button" data-imprimir>
+      <svg class="icono" aria-hidden="true"><use href="#i-imprimir"></use></svg>
+      Imprimir anexo
+    </button>
+  </div>
+</div>
+
+<article class="hoja">
+  <header class="hoja-cabecera">
+    <div>
+      <h1>{{ cfg.ie_nombre }}</h1>
+      <p>Año escolar {{ cfg.anio }} · Área de Ciencia y Tecnología · Secundaria</p>
+    </div>
+    <span class="hoja-sello">Anexo</span>
+  </header>
+
+  <h2 class="hoja-titulo">Anexo de comportamiento y convivencia</h2>
+  <p class="hoja-subtitulo">Documento de seguimiento individual del estudiante</p>
+
+  <div class="hoja-datos">
+    <div class="hoja-dato">
+      <span>Estudiante</span>
+      <strong>{{ estudiante.apellidos }}, {{ estudiante.nombres }}</strong>
+    </div>
+    <div class="hoja-dato">
+      <span>DNI</span>
+      <strong>{{ estudiante.dni or '—' }}</strong>
+    </div>
+    <div class="hoja-dato">
+      <span>Grado y sección</span>
+      <strong>{{ estudiante.grado }}.° grado · Sección {{ estudiante.seccion }}</strong>
+    </div>
+    <div class="hoja-dato">
+      <span>Fecha de nacimiento</span>
+      <strong>{{ estudiante.fecha_nacimiento|fecha if estudiante.fecha_nacimiento else '—' }}</strong>
+    </div>
+    <div class="hoja-dato">
+      <span>Docente del área</span>
+      <strong>{{ cfg.docente }}</strong>
+    </div>
+    <div class="hoja-dato">
+      <span>Apoderado</span>
+      <strong>
+        {% if padres %}
+          {{ padres[0].nombre }}{% if padres[0].telefono %} · {{ padres[0].telefono }}{% endif %}
+        {% else %}
+          —
+        {% endif %}
+      </strong>
+    </div>
+  </div>
+
+  <h3>1. Registro de comportamiento</h3>
+  <div class="tabla-envoltura">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th style="width: 34px">N.°</th>
+          <th style="width: 80px">Fecha</th>
+          <th style="width: 130px">Tipo</th>
+          <th>Descripción</th>
+          <th style="width: 180px">Acción / acuerdo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if comportamiento %}
+          {% for r in comportamiento %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ r.fecha|fecha }}</td>
+              <td>{{ TIPOS_COMPORTAMIENTO[r.tipo].nombre }}</td>
+              <td>{{ r.descripcion }}</td>
+              <td>{{ r.accion or '—' }}</td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="5" class="suave">Sin registros de comportamiento.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <h3>2. Registro de faltas</h3>
+  <div class="tabla-envoltura">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th style="width: 34px">N.°</th>
+          <th style="width: 80px">Fecha</th>
+          <th style="width: 130px">Tipo</th>
+          <th>Descripción</th>
+          <th style="width: 160px">Medida correctiva</th>
+          <th style="width: 70px">Familia</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if faltas %}
+          {% for f in faltas %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ f.fecha|fecha }}</td>
+              <td>{{ TIPOS_FALTA[f.tipo] }}</td>
+              <td>{{ f.descripcion }}</td>
+              <td>{{ f.medida or '—' }}</td>
+              <td>{{ 'Sí' if f.comunicado else 'No' }}</td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="6" class="suave">Sin faltas registradas.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <h3>3. Resumen de asistencia</h3>
+  <div class="hoja-resumen">
+    <div class="mini-stat verde"><strong>{{ resumen_asistencia.presente }}</strong><span>Presente</span></div>
+    <div class="mini-stat ambar"><strong>{{ resumen_asistencia.tarde }}</strong><span>Tarde</span></div>
+    <div class="mini-stat rojo"><strong>{{ resumen_asistencia.ausente }}</strong><span>Ausente</span></div>
+    <div class="mini-stat azul"><strong>{{ resumen_asistencia.justificado }}</strong><span>Justificado</span></div>
+  </div>
+  <p class="ayuda" style="margin-top: 7px">
+    {{ total_asistencia }} día{{ 's' if total_asistencia != 1 }} con registro ·
+    Asistencia efectiva: {{ porcentaje_asistencia }}% (presente + tarde).
+  </p>
+
+  <h3>4. Observaciones del docente</h3>
+  <div class="hoja-observaciones">
+    &nbsp;
+  </div>
+
+  <p class="pequeno" style="margin-top: 18px">
+    Lugar y fecha: ______________________________, {{ hoy|fecha_larga }}.
+  </p>
+
+  <div class="firmas">
+    <div class="firma">
+      <strong>{{ cfg.docente }}</strong>
+      Docente de Ciencia y Tecnología
+    </div>
+    <div class="firma">
+      <strong>{{ padres[0].nombre if padres else '________________________' }}</strong>
+      Padre / madre o apoderado
+    </div>
+    <div class="firma">
+      <strong>________________________</strong>
+      Dirección / coordinación
+    </div>
+  </div>
+
+  <footer class="hoja-pie">
+    Documento generado con Aula CyT · Creado por Walter López Culqui · {{ hoy|fecha }}
+  </footer>
+</article>
+{% endblock %}

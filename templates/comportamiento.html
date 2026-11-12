@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block titulo %}Comportamiento{% endblock %}
+
+{% block contenido %}
+<div class="barra-lista">
+  <div>
+    <h1>Comportamiento</h1>
+    <p>Anexo de convivencia: méritos, observaciones y llamados de atención.</p>
+  </div>
+  <a class="btn btn-contorno" href="{{ url_for('estudiantes') }}">
+    <svg class="icono" aria-hidden="true"><use href="#i-usuarios"></use></svg>
+    Ver estudiantes
+  </a>
+</div>
+
+<div class="convivencia-grid">
+  <section class="panel convivencia-form">
+    <div class="panel-cabecera">
+      <div class="panel-titulo-icono">
+        <svg class="icono" aria-hidden="true"><use href="#i-corazon"></use></svg>
+        <div>
+          <h2>Nuevo registro</h2>
+          <p>Deja constancia de una situación del aula.</p>
+        </div>
+      </div>
+    </div>
+
+    {% if estudiantes_todos %}
+      <form class="formulario" method="post" action="{{ url_for('comportamiento') }}">
+        <div class="campo">
+          <label for="cb-estudiante">Estudiante <span class="req">*</span></label>
+          <select id="cb-estudiante" name="estudiante_id" required>
+            <option value="">Selecciona un estudiante</option>
+            {% for e in estudiantes_todos %}
+              <option value="{{ e.id }}" {{ 'selected' if preseleccionado == e.id }}>
+                {{ e.grado }}.° {{ e.seccion }} — {{ e.apellidos }}, {{ e.nombres }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="grid-2">
+          <div class="campo">
+            <label for="cb-fecha">Fecha <span class="req">*</span></label>
+            <input id="cb-fecha" type="date" name="fecha" value="{{ hoy }}" required>
+          </div>
+          <div class="campo">
+            <label for="cb-tipo">Tipo <span class="req">*</span></label>
+            <select id="cb-tipo" name="tipo" required>
+              {% for clave, info in TIPOS_COMPORTAMIENTO.items() %}
+                <option value="{{ clave }}" {{ 'selected' if clave == 'merito' }}>{{ info.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="cb-descripcion">Descripción <span class="req">*</span></label>
+          <textarea id="cb-descripcion" name="descripcion" maxlength="1000" required placeholder="Describe lo ocurrido de forma objetiva."></textarea>
+        </div>
+
+        <div class="campo">
+          <label for="cb-accion">Acción o acuerdo adoptado</label>
+          <textarea id="cb-accion" name="accion" maxlength="500" placeholder="Ej. Diálogo con el estudiante, compromiso de mejora…"></textarea>
+        </div>
+
+        <button class="btn btn-primario btn-bloque" type="submit">
+          <svg class="icono" aria-hidden="true"><use href="#i-guardar"></use></svg>
+          Guardar registro
+        </button>
+      </form>
+    {% else %}
+      <div class="vacio" style="padding: 18px 10px">
+        <div class="vacio-icono"><svg class="icono" aria-hidden="true"><use href="#i-usuarios"></use></svg></div>
+        <h3>Sin estudiantes registrados</h3>
+        <p>Primero registra estudiantes para poder anotar su comportamiento.</p>
+        <a class="btn btn-primario btn-sm" href="{{ url_for('estudiante_nuevo') }}">Registrar estudiante</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <div class="panel-cabecera">
+      <div class="panel-titulo-icono">
+        <svg class="icono" aria-hidden="true"><use href="#i-libro"></use></svg>
+        <div>
+          <h2>Registros del aula</h2>
+          <p>{{ registros|length }} registro{{ 's' if registros|length != 1 }} encontrado{{ 's' if registros|length != 1 }}.</p>
+        </div>
+      </div>
+    </div>
+
+    <form class="filtros" method="get" action="{{ url_for('comportamiento') }}">
+      <div class="campo">
+        <label for="cb-f-grado">Grado</label>
+        <select id="cb-f-grado" name="grado" data-auto-submit>
+          <option value="">Todos</option>
+          {% for g in GRADOS %}
+            <option value="{{ g }}" {{ 'selected' if grado == g }}>{{ g }}.°</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label for="cb-f-seccion">Sección</label>
+        <select id="cb-f-seccion" name="seccion" data-auto-submit>
+          <option value="">Todas</option>
+          {% for s in SECCIONES %}
+            <option value="{{ s }}" {{ 'selected' if seccion == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label for="cb-f-tipo">Tipo</label>
+        <select id="cb-f-tipo" name="tipo" data-auto-submit>
+          <option value="">Todos</option>
+          {% for clave, info in TIPOS_COMPORTAMIENTO.items() %}
+            <option value="{{ clave }}" {{ 'selected' if tipo == clave }}>{{ info.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if grado or seccion or tipo %}
+        <a class="btn btn-fantasma" href="{{ url_for('comportamiento') }}">Limpiar</a>
+      {% endif %}
+    </form>
+
+    {% if registros %}
+      <div class="registros">
+        {% for r in registros %}
+          <article class="registro {{ r.tipo }}">
+            <div class="registro-cabecera">
+              <div>
+                <strong>
+                  <a href="{{ url_for('estudiante_detalle', estudiante_id=r.estudiante_id) }}" style="color: inherit">
+                    {{ r.apellidos }}, {{ r.nombres }}
+                  </a>
+                </strong>
+                <div class="meta">
+                  <span>{{ r.grado }}.° {{ r.seccion }}</span>
+                  <span>·</span>
+                  <span>{{ r.fecha|fecha }}</span>
+                </div>
+              </div>
+              <div class="registro-acciones">
+                <span class="badge tipo-{{ r.tipo }}">{{ TIPOS_COMPORTAMIENTO[r.tipo].nombre }}</span>
+                <form method="post" action="{{ url_for('comportamiento_eliminar', registro_id=r.id) }}" data-confirmar="¿Eliminar este registro de comportamiento?">
+                  <button class="btn btn-fantasma btn-icono btn-sm" type="submit" title="Eliminar registro" aria-label="Eliminar registro de {{ r.nombres }} {{ r.apellidos }}">
+                    <svg class="icono" aria-hidden="true"><use href="#i-eliminar"></use></svg>
+                  </button>
+                </form>
+              </div>
+            </div>
+            <p>{{ r.descripcion }}</p>
+            {% if r.accion %}
+              <div class="medida"><strong>Acción:</strong> {{ r.accion }}</div>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="vacio" style="padding: 26px 10px">
+        <div class="vacio-icono"><svg class="icono" aria-hidden="true"><use href="#i-corazon"></use></svg></div>
+        <h3>Sin registros de comportamiento</h3>
+        <p>Usa el formulario para anotar un mérito, una observación o un llamado de atención.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

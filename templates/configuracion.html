@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block titulo %}Configuración{% endblock %}
+
+{% block contenido %}
+<div class="barra-lista">
+  <div>
+    <h1>Configuración</h1>
+    <p>Personaliza los datos de la institución educativa y del docente.</p>
+  </div>
+</div>
+
+<div class="config-grid">
+  <section class="panel">
+    <div class="panel-cabecera">
+      <div class="panel-titulo-icono">
+        <svg class="icono" aria-hidden="true"><use href="#i-ajustes"></use></svg>
+        <div>
+          <h2>Datos de la I.E.</h2>
+          <p>Se mostrarán en el inicio y en los anexos imprimibles.</p>
+        </div>
+      </div>
+    </div>
+
+    <form class="formulario" method="post" action="{{ url_for('configuracion') }}">
+      <div class="campo">
+        <label for="ie_nombre">Nombre de la institución educativa</label>
+        <input id="ie_nombre" type="text" name="ie_nombre" value="{{ cfg.ie_nombre }}" maxlength="150" required placeholder="Ej. I.E. N.° 1234 «San Martín»">
+      </div>
+      <div class="grid-2">
+        <div class="campo">
+          <label for="docente">Docente del área</label>
+          <input id="docente" type="text" name="docente" value="{{ cfg.docente }}" maxlength="120" required>
+        </div>
+        <div class="campo">
+          <label for="anio">Año escolar</label>
+          <input id="anio" type="text" name="anio" value="{{ cfg.anio }}" maxlength="4" inputmode="numeric" pattern="\d{4}" required>
+        </div>
+      </div>
+      <div class="acciones-form">
+        <button class="btn btn-primario" type="submit">
+          <svg class="icono" aria-hidden="true"><use href="#i-guardar"></use></svg>
+          Guardar configuración
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <div class="pila">
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div class="panel-titulo-icono">
+          <svg class="icono" aria-hidden="true"><use href="#i-respaldo"></use></svg>
+          <div>
+            <h2>Respaldo de datos</h2>
+            <p>Toda la información está en un archivo SQLite.</p>
+          </div>
+        </div>
+      </div>
+      <p class="pequeno suave">Ubicación de la base de datos:</p>
+      <div class="ruta-bd">{{ ruta_bd }}</div>
+      <div class="fila margen-arriba">
+        <a class="btn btn-contorno" href="{{ url_for('respaldo') }}">
+          <svg class="icono" aria-hidden="true"><use href="#i-descargar"></use></svg>
+          Descargar respaldo
+        </a>
+      </div>
+      <p class="ayuda margen-arriba">
+        Descarga el respaldo periódicamente y guárdalo en un USB o en la nube.
+        Para restaurarlo, reemplaza el archivo <strong>registro.db</strong> de la
+        carpeta <strong>instance</strong> con la app detenida.
+      </p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div class="panel-titulo-icono">
+          <svg class="icono" aria-hidden="true"><use href="#i-usuario"></use></svg>
+          <div>
+            <h2>Acerca de Aula CyT</h2>
+            <p>Versión 1.0 · aplicación local con Flask.</p>
+          </div>
+        </div>
+      </div>
+      <div class="credito">
+        <span class="avatar avatar-sm" aria-hidden="true">WL</span>
+        <div>
+          <strong>Walter López Culqui</strong>
+          <small>Creador de la aplicación</small>
+        </div>
+      </div>
+      <p class="pequeno suave margen-arriba">
+        Sistema de registro docente para el área de Ciencia y Tecnología, de 1.° a
+        5.° grado de secundaria. Incluye estudiantes, padres de familia, escáner de
+        DNI, calificaciones, asistencia, comportamiento, faltas y anexos imprimibles.
+      </p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div class="panel-titulo-icono">
+          <svg class="icono" aria-hidden="true"><use href="#i-info"></use></svg>
+          <div>
+            <h2>Uso responsable</h2>
+          </div>
+        </div>
+      </div>
+      <p class="pequeno suave">
+        Esta aplicación está pensada para ejecutarse en tu computadora y guardar datos
+        locales. Si la publicas en internet o la compartes en una red, protege el acceso
+        con autenticación y HTTPS, y revisa las normas de protección de datos personales
+        de tu institución.
+      </p>
+    </section>
+  </div>
+</div>
+{% endblock %}

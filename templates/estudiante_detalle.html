@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% block titulo %}{{ estudiante.nombres }} {{ estudiante.apellidos }}{% endblock %}
+
+{% block contenido %}
+<nav class="migas" aria-label="Ruta de navegación">
+  <a href="{{ url_for('estudiantes') }}">Estudiantes</a>
+  <svg class="icono" aria-hidden="true"><use href="#i-flecha-der"></use></svg>
+  <span>{{ estudiante.apellidos }}, {{ estudiante.nombres }}</span>
+</nav>
+
+<section class="perfil">
+  <span class="avatar" aria-hidden="true">{{ estudiante|iniciales }}</span>
+  <div class="perfil-info">
+    <h1>{{ estudiante.nombres }} {{ estudiante.apellidos }}</h1>
+    <div class="chips">
+      <span class="chip">
+        <svg class="icono" aria-hidden="true"><use href="#i-libro"></use></svg>
+        {{ estudiante.grado }}.° grado · Sección {{ estudiante.seccion }}
+      </span>
+      {% if estudiante.dni %}
+        <span class="chip">
+          <svg class="icono" aria-hidden="true"><use href="#i-dni"></use></svg>
+          DNI {{ estudiante.dni }}
+        </span>
+      {% endif %}
+      {% if estudiante.sexo %}
+        <span class="chip">{{ 'Masculino' if estudiante.sexo == 'M' else 'Femenino' }}</span>
+      {% endif %}
+      <span class="chip">
+        <svg class="icono" aria-hidden="true"><use href="#i-usuarios"></use></svg>
+        {{ padres|length }} apoderado{{ 's' if padres|length != 1 }}
+      </span>
+    </div>
+  </div>
+  <div class="perfil-acciones">
+    <a class="btn btn-contorno" href="{{ url_for('estudiante_editar', estudiante_id=estudiante.id) }}">
+      <svg class="icono" aria-hidden="true"><use href="#i-editar"></use></svg>
+      Editar
+    </a>
+    <a class="btn btn-contorno" href="{{ url_for('estudiante_anexo', estudiante_id=estudiante.id) }}">
+      <svg class="icono" aria-hidden="true"><use href="#i-imprimir"></use></svg>
+      Anexo
+    </a>
+    <form method="post" action="{{ url_for('estudiante_eliminar', estudiante_id=estudiante.id) }}" data-confirmar="¿Eliminar a {{ estudiante.nombres }} {{ estudiante.apellidos }}? Se borrarán también sus notas, asistencia, comportamiento y faltas.">
+      <button class="btn btn-peligro btn-icono" type="submit" title="Eliminar estudiante" aria-label="Eliminar estudiante">
+        <svg class="icono" aria-hidden="true"><use href="#i-eliminar"></use></svg>
+      </button>
+    </form>
+  </div>
+</section>
+
+<div class="detalle-grid">
+  <div class="detalle-columna">
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div class="panel-titulo-icono">
+          <svg class="icono" aria-hidden="true"><use href="#i-notas"></use></svg>
+          <div>
+            <h2>Calificaciones</h2>
+            <p>Competencias del área por bimestre.</p>
+          </div>
+        </div>
+        <a class="btn btn-contorno btn-sm" href="{{ url_for('calificaciones', grado=estudiante.grado, seccion=estudiante.seccion) }}">Registrar notas</a>
+      </div>
+
+      <div class="tabla-envoltura">
+        <table class="tabla tabla-notas">
+          <thead>
+            <tr>
+              <th class="competencia">Competencia</th>
+              {% for b in BIMESTRES %}
+                <th>Bim. {{ b }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in COMPETENCIAS %}
+              <tr>
+                <td>
+                  <strong>{{ c.nombre }}</strong>
+                  <br>
+                  <span class="ayuda">{{ c.descripcion }}</span>
+                </td>
+                {% for b in BIMESTRES %}
+                  {% set nota = notas.get(c.codigo ~ ':' ~ b) %}
+                  <td>
+                    {% if nota %}
+                      <span class="badge nota-{{ nota|lower }}">{{ nota }}</span>
+                    {% else %}
+                      <span class="suave">—</span>
+                    {% endif %}
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="leyenda margen-arriba">
+        {% for clave, descripcion in NOTAS.items() %}
+          <span class="badge nota-{{ clave|lower }}">{{ clave }} · {{ descripcion }}</span>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div class="panel-titulo-icono">
+          <svg class="icono" aria-hidden="true"><use href="#i-corazon"></use></svg>
+          <div>
+            <h2>Comportamiento</h2>
+            <p>Méritos, observaciones y llamados de atención.</p>
+          </div>
+        </div>
+        <a class="btn btn-contorno btn-sm" href="{{ url_for('comportamiento', estudiante_id=estudiante.id) }}">Agregar registro</a>
+      </div>
+
+      {% if comportamiento %}
+        <div class="registros">
+          {% for r in comportamiento %}
+            <article class="registro {{ r.tipo }}">
+              <div class="registro-cabecera">
+                <div>
+                  <strong>{{ TIPOS_COMPORTAMIENTO[r.tipo].nombre }}</strong>
+                  <div class="meta">
+                    <span>{{ r.fecha|fecha }}</span>
+                  </div>
+                </div>
+                <div class="registro-acciones">
+                  <span class="badge tipo-{{ r.tipo }}">{{ r.tipo|capitalize }}</span>
+                  <form method="post" action="{{ url_for('comportamiento_eliminar', registro_id=r.id) }}" data-confirmar="¿Eliminar este registro de comportamiento?">
+                    <button class="btn btn-fantasma btn-icono btn-sm" type="submit" title="Eliminar registro" aria-label="Eliminar registro">
+                      <svg class="icono" aria-hidden="true"><use href="#i-eliminar"></use></svg>
+                    </button>
+                  </form>
+                </div>
+              </div>
+              <p>{{ r.descripcion }}</p>
+              {% if r.accion %}
+                <div class="medida"><strong>Acción adoptada:</strong> {{ r.accion }}</div>
+              {% endif %}
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="vacio" style="padding: 18px 10px">
+          <div class="vacio-icono"><svg class="icono" aria-hidden="true"><use href="#i-corazon"></use></svg></div>
+          <h3>Sin registros de comportamiento</h3>
+          <p>Registra méritos o observaciones para acompañar la convivencia del aula.</p>
+          <a class="btn btn-contorno btn-sm" href="{{ url_for('comportamiento', estudiante_id=estudiante.id) }}">Agregar el primero</a>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div class="panel-titulo-icono">
+          <svg class="icono" aria-hidden="true"><use href="#i-alerta"></use></svg>
+          <div>
+            <h2>Faltas</h2>
+            <p>Incidencias, medidas correctivas y comunicación a la familia.</p>
+          </div>
+        </div>
+        <a class="btn btn-contorno btn-sm" href="{{ url_for('faltas', estudiante_id=estudiante.id) }}">Registrar falta</a>
+      </div>
+
+      {% if faltas %}
+        <div class="registros">
+          {% for f in faltas %}
+            <article class="registro {{ f.tipo }}">
+              <div class="registro-cabecera">
+                <div>
+                  <strong>{{ TIPOS_FALTA[f.tipo] }}</strong>
+                  <div class="meta">
+                    <span>{{ f.fecha|fecha }}</span>
+                    <span class="badge {{ 'estado-presente' if f.comunicado else 'estado-ausente' }}">
+                      {{ 'Comunicado a la familia' if f.comunicado else 'Pendiente de comunicar' }}
+                    </span>
+                  </div>
+                </div>
+                <div class="registro-acciones">
+                  <span class="badge tipo-{{ f.tipo }}">{{ f.tipo|replace('_', ' ')|capitalize }}</span>
+                  <form method="post" action="{{ url_for('falta_eliminar', registro_id=f.id) }}" data-confirmar="¿Eliminar este registro de falta?">
+                    <button class="btn btn-fantasma btn-icono btn-sm" type="submit" title="Eliminar registro" aria-label="Eliminar registro">
+                      <svg class="icono" aria-hidden="true"><use href="#i-eliminar"></use></svg>
+                    </button>
+                  </form>
+                </div>
+              </div>
+              <p>{{ f.descripcion }}</p>
+              {% if f.medida %}
+                <div class="medida"><strong>Medida correctiva:</strong> {{ f.medida }}</div>
+              {% endif %}
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="vacio" style="padding: 18px 10px">
+          <div class="vacio-icono"><svg class="icono" aria-hidden="true"><use href="#i-check"></use></svg></div>
+          <h3>Sin faltas registradas</h3>
+          <p>No hay incidencias disciplinarias registradas para este estudiante.</p>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <aside class="detalle-columna">
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div class="panel-titulo-icono">
+          <svg class="icono" aria-hidden="true"><use href="#i-telefono"></use></svg>
+          <div>
+            <h2>Contacto familiar</h2>
+            <p>Padres o apoderados registrados.</p>
+          </div>
+        </div>
+      </div>
+
+      {% if padres %}
+        {% for p in padres %}
+          <div class="padre-card">
+            <svg class="icono" aria-hidden="true"><use href="#i-usuario"></use></svg>
+            <div>
+              <strong>{{ p.nombre }}</strong>
+              <small>{{ p.parentesco or 'Apoderado/a' }}{% if p.dni %} · DNI {{ p.dni }}{% endif %}</small>
+              {% if p.telefono %}
+                <a href="tel:{{ p.telefono }}">
+                  <svg class="icono" style="width:14px;height:14px" aria-hidden="true"><use href="#i-telefono"></use></svg>
+                  {{ p.telefono }}
+                </a>
+              {% else %}
+                <small>Sin teléfono registrado</small>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="pequeno suave">No hay apoderados registrados.</p>
+        <a class="btn btn-contorno btn-sm margen-arriba" href="{{ url_for('estudiante_editar', estudiante_id=estudiante.id) }}">Agregar apoderado</a>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div class="panel-titulo-icono">
+          <svg class="icono" aria-hidden="true"><use href="#i-asistencia"></use></svg>
+          <div>
+            <h2>Asistencia</h2>
+            <p>Resumen acumulado del año.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="resumen-asistencia">
+        <div class="mini-stat verde"><strong>{{ resumen_asistencia.presente }}</strong><span>Presente</span></div>
+        <div class="mini-stat ambar"><strong>{{ resumen_asistencia.tarde }}</strong><span>Tarde</span></div>
+        <div class="mini-stat rojo"><strong>{{ resumen_asistencia.ausente }}</strong><span>Ausente</span></div>
+        <div class="mini-stat azul"><strong>{{ resumen_asistencia.justificado }}</strong><span>Justificado</span></div>
+      </div>
+      <div class="flex-between margen-arriba">
+        <span class="pequeno suave">Asistencia efectiva</span>
+        <strong style="color: var(--tinta)">{{ porcentaje_asistencia }}%</strong>
+      </div>
+      <div class="progreso" role="img" aria-label="Asistencia efectiva {{ porcentaje_asistencia }}%">
+        <span style="width: {{ porcentaje_asistencia }}%"></span>
+      </div>
+      <p class="ayuda margen-arriba">{{ total_asistencia }} día{{ 's' if total_asistencia != 1 }} con registro. Presente + tarde cuentan como asistencia efectiva.</p>
+      <a class="btn btn-contorno btn-sm margen-arriba" href="{{ url_for('asistencia', grado=estudiante.grado, seccion=estudiante.seccion) }}">Ver asistencia del aula</a>
+    </section>
+
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div class="panel-titulo-icono">
+          <svg class="icono" aria-hidden="true"><use href="#i-dni"></use></svg>
+          <div>
+            <h2>Datos personales</h2>
+          </div>
+        </div>
+      </div>
+      <dl class="info-lista">
+        <div><dt>DNI</dt><dd>{{ estudiante.dni or '—' }}</dd></div>
+        <div><dt>Nacimiento</dt><dd>{{ estudiante.fecha_nacimiento|fecha if estudiante.fecha_nacimiento else '—' }}</dd></div>
+        <div><dt>Sexo</dt><dd>{{ 'Masculino' if estudiante.sexo == 'M' else 'Femenino' if estudiante.sexo == 'F' else '—' }}</dd></div>
+        <div><dt>Teléfono</dt><dd>{{ estudiante.telefono or '—' }}</dd></div>
+        <div><dt>Dirección</dt><dd>{{ estudiante.direccion or '—' }}</dd></div>
+        <div><dt>Registrado</dt><dd>{{ estudiante.creado_en|fecha if estudiante.creado_en else '—' }}</dd></div>
+      </dl>
+    </section>
+  </aside>
+</div>
+{% endblock %}

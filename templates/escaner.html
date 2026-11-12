@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block titulo %}Escáner de DNI{% endblock %}
+
+{% block contenido %}
+<div class="barra-lista">
+  <div>
+    <h1>Escáner de DNI</h1>
+    <p>Toma una foto del DNI y completa los datos del estudiante automáticamente.</p>
+  </div>
+  <a class="btn btn-contorno" href="{{ url_for('estudiante_nuevo') }}">
+    <svg class="icono" aria-hidden="true"><use href="#i-mas"></use></svg>
+    Registro manual
+  </a>
+</div>
+
+<div class="escaner-grid">
+  <div class="pila">
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div class="panel-titulo-icono">
+          <svg class="icono" aria-hidden="true"><use href="#i-camara"></use></svg>
+          <div>
+            <h2>Cámara del dispositivo</h2>
+            <p>Encuadra el DNI y captura la imagen.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="aviso ambar oculto" id="aviso-camara">
+        <svg class="icono" aria-hidden="true"><use href="#i-info"></use></svg>
+        <span>
+          La cámara en vivo necesita abrir la app en <strong>localhost</strong> o con
+          <strong>HTTPS</strong>. En el celular, usa el botón «Tomar o subir foto»:
+          abre la cámara del teléfono y funciona sin problema.
+        </span>
+      </div>
+
+      <div class="camara" id="camara">
+        <video id="video" playsinline muted autoplay></video>
+        <div class="camara-guia" aria-hidden="true"></div>
+        <div class="camara-placeholder">
+          <svg class="icono" aria-hidden="true"><use href="#i-dni"></use></svg>
+          <strong>Vista previa de la cámara</strong>
+          <small>Activa la cámara o sube una foto del DNI. Evita reflejos y sombras.</small>
+        </div>
+      </div>
+
+      <div class="camara-acciones">
+        <button class="btn btn-primario" id="btn-activar-camara" type="button">
+          <svg class="icono" aria-hidden="true"><use href="#i-camara"></use></svg>
+          Activar cámara
+        </button>
+        <button class="btn btn-secundario" id="btn-capturar" type="button" disabled>
+          <svg class="icono" aria-hidden="true"><use href="#i-escaner"></use></svg>
+          Capturar y leer
+        </button>
+        <button class="btn btn-fantasma oculto" id="btn-detener" type="button">Detener cámara</button>
+        <button class="btn btn-contorno" id="btn-codigo-barras" type="button">
+          <svg class="icono" aria-hidden="true"><use href="#i-barras"></use></svg>
+          Leer código de barras
+        </button>
+        <label class="archivo-boton">
+          <svg class="icono" aria-hidden="true"><use href="#i-subir"></use></svg>
+          Tomar o subir foto
+          <input id="archivo-foto" type="file" accept="image/*" capture="environment">
+        </label>
+      </div>
+
+      <p class="ayuda margen-arriba">
+        Formatos aceptados: JPG, PNG, WEBP o BMP · máximo 15 MB. La foto debe mostrar
+        el DNI completo y enfocado.
+      </p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-cabecera">
+        <div class="panel-titulo-icono">
+          <svg class="icono" aria-hidden="true"><use href="#i-info"></use></svg>
+          <div>
+            <h2>Cómo obtener una buena lectura</h2>
+          </div>
+        </div>
+      </div>
+      <ol class="pasos">
+        <li>Coloca el DNI sobre una superficie plana y con buena iluminación.</li>
+        <li>Evita reflejos, sombras y que tus dedos cubran los datos.</li>
+        <li>Toma la foto de frente, sin inclinar demasiado el documento.</li>
+        <li>Revisa los datos detectados antes de registrar al estudiante.</li>
+      </ol>
+      <div class="aviso margen-arriba">
+        <svg class="icono" aria-hidden="true"><use href="#i-info"></use></svg>
+        <span>
+          La lectura automática necesita el componente <strong>Tesseract OCR</strong>
+          instalado en la computadora. Si no está instalado, aún puedes escribir los
+          datos manualmente en el panel de la derecha. Revisa el archivo README para
+          instalarlo.
+        </span>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <div class="panel-cabecera">
+      <div class="panel-titulo-icono">
+        <svg class="icono" aria-hidden="true"><use href="#i-dni"></use></svg>
+        <div>
+          <h2>Datos detectados</h2>
+          <p>Corrige cualquier dato antes de continuar.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="estado-lectura" id="estado-lectura" role="status"></div>
+
+    <div class="resultado-campos">
+      <div class="campo campo-completo">
+        <label for="res-nombres">Nombres</label>
+        <input id="res-nombres" type="text" maxlength="80" placeholder="Nombres del estudiante">
+      </div>
+      <div class="campo campo-completo">
+        <label for="res-apellidos">Apellidos</label>
+        <input id="res-apellidos" type="text" maxlength="80" placeholder="Apellidos del estudiante">
+      </div>
+      <div class="campo">
+        <label for="res-dni">DNI</label>
+        <input id="res-dni" type="text" maxlength="8" inputmode="numeric" data-dni placeholder="8 dígitos">
+      </div>
+      <div class="campo">
+        <label for="res-fecha">Fecha de nacimiento</label>
+        <input id="res-fecha" type="date">
+      </div>
+      <div class="campo campo-completo">
+        <label for="res-sexo">Sexo</label>
+        <select id="res-sexo">
+          <option value="">Sin especificar</option>
+          <option value="M">Masculino</option>
+          <option value="F">Femenino</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fila margen-arriba">
+      <a class="btn btn-primario" id="btn-usar-datos" href="{{ url_for('estudiante_nuevo') }}">
+        <svg class="icono" aria-hidden="true"><use href="#i-flecha-der"></use></svg>
+        Continuar al registro
+      </a>
+      <button class="btn btn-fantasma" id="btn-limpiar-resultado" type="button">Limpiar</button>
+    </div>
+
+    <details class="margen-arriba" id="detalle-ocr">
+      <summary class="pequeno suave" style="cursor:pointer">Ver texto reconocido por el OCR</summary>
+      <pre class="texto-ocr" id="texto-ocr"></pre>
+    </details>
+
+    <div class="aviso margen-arriba">
+      <svg class="icono" aria-hidden="true"><use href="#i-usuario"></use></svg>
+      <span>
+        También puedes usar este panel para escribir los datos a mano y continuar al
+        formulario de registro.
+      </span>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/escaner.js') }}" defer></script>
+{% endblock %}

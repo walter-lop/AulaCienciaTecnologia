@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block titulo %}{{ 'Editar estudiante' if modo == 'editar' else 'Nuevo estudiante' }}{% endblock %}
+
+{% block contenido %}
+<nav class="migas" aria-label="Ruta de navegación">
+  <a href="{{ url_for('estudiantes') }}">Estudiantes</a>
+  <svg class="icono" aria-hidden="true"><use href="#i-flecha-der"></use></svg>
+  <span>{{ 'Editar ficha' if modo == 'editar' else 'Nuevo estudiante' }}</span>
+</nav>
+
+<div class="barra-lista">
+  <div>
+    <h1>{{ 'Editar estudiante' if modo == 'editar' else 'Nuevo estudiante' }}</h1>
+    <p>Completa los datos personales y de contacto familiar.</p>
+  </div>
+  <a class="btn btn-contorno" href="{{ url_for('estudiantes') }}">
+    <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"></use></svg>
+    Volver a la lista
+  </a>
+</div>
+
+<form class="formulario" method="post" action="{{ url_for('estudiante_editar', estudiante_id=estudiante.get('id')) if modo == 'editar' else url_for('estudiante_nuevo') }}">
+  <section class="panel">
+    <div class="panel-cabecera">
+      <div class="panel-titulo-icono">
+        <svg class="icono" aria-hidden="true"><use href="#i-usuario"></use></svg>
+        <div>
+          <h2>Datos del estudiante</h2>
+          <p>Los campos con <span style="color: var(--rojo)">*</span> son obligatorios.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="campo">
+        <label for="nombres">Nombres <span class="req">*</span></label>
+        <input id="nombres" type="text" name="nombres" value="{{ estudiante.get('nombres', '') }}" maxlength="80" required autocomplete="given-name" placeholder="Ej. Walter Antonio">
+      </div>
+      <div class="campo">
+        <label for="apellidos">Apellidos <span class="req">*</span></label>
+        <input id="apellidos" type="text" name="apellidos" value="{{ estudiante.get('apellidos', '') }}" maxlength="80" required autocomplete="family-name" placeholder="Ej. López Culqui">
+      </div>
+
+      <div class="campo">
+        <label for="dni">DNI</label>
+        <div class="input-con-boton">
+          <input id="dni" type="text" name="dni" value="{{ estudiante.get('dni') or '' }}" maxlength="8" inputmode="numeric" pattern="\d{8}" data-dni autocomplete="off" placeholder="8 dígitos">
+          <a class="btn btn-contorno" href="{{ url_for('escaner') }}" target="_blank" rel="noopener" title="Abrir el escáner de DNI en otra pestaña">
+            <svg class="icono" aria-hidden="true"><use href="#i-escaner"></use></svg>
+            Escanear
+          </a>
+        </div>
+        <span class="ayuda">Opcional. El escáner abre en otra pestaña.</span>
+      </div>
+
+      <div class="campo">
+        <label for="fecha_nacimiento">Fecha de nacimiento</label>
+        <input id="fecha_nacimiento" type="date" name="fecha_nacimiento" value="{{ estudiante.get('fecha_nacimiento', '') or '' }}">
+      </div>
+
+      <div class="campo">
+        <label for="grado">Grado <span class="req">*</span></label>
+        <select id="grado" name="grado" required>
+          <option value="">Selecciona</option>
+          {% for g in GRADOS %}
+            <option value="{{ g }}" {{ 'selected' if estudiante.get('grado') == g }}>{{ g }}.° grado</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="campo">
+        <label for="seccion">Sección <span class="req">*</span></label>
+        <select id="seccion" name="seccion" required>
+          <option value="">Selecciona</option>
+          {% for s in SECCIONES %}
+            <option value="{{ s }}" {{ 'selected' if estudiante.get('seccion') == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="campo">
+        <label for="sexo">Sexo</label>
+        <select id="sexo" name="sexo">
+          <option value="">Sin especificar</option>
+          <option value="M" {{ 'selected' if estudiante.get('sexo') == 'M' }}>Masculino</option>
+          <option value="F" {{ 'selected' if estudiante.get('sexo') == 'F' }}>Femenino</option>
+        </select>
+      </div>
+
+      <div class="campo">
+        <label for="telefono">Teléfono del estudiante</label>
+        <input id="telefono" type="tel" name="telefono" value="{{ estudiante.get('telefono') or '' }}" maxlength="30" autocomplete="tel" placeholder="Opcional">
+      </div>
+
+      <div class="campo campo-completo">
+        <label for="direccion">Dirección</label>
+        <input id="direccion" type="text" name="direccion" value="{{ estudiante.get('direccion') or '' }}" maxlength="200" autocomplete="street-address" placeholder="Calle, número, distrito">
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-cabecera">
+      <div class="panel-titulo-icono">
+        <svg class="icono" aria-hidden="true"><use href="#i-telefono"></use></svg>
+        <div>
+          <h2>Padres o apoderados</h2>
+          <p>Registra a la persona de contacto para comunicaciones.</p>
+        </div>
+      </div>
+      <button class="btn btn-contorno btn-sm" type="button" data-agregar-padre>
+        <svg class="icono" aria-hidden="true"><use href="#i-mas"></use></svg>
+        Agregar apoderado
+      </button>
+    </div>
+
+    <div id="padres">
+      {% set lista_padres = padres if padres else [{}] %}
+      {% for p in lista_padres %}
+        <div class="padre-fila">
+          <div class="campo">
+            <label for="padre-nombre-{{ loop.index }}">Nombre completo</label>
+            <input id="padre-nombre-{{ loop.index }}" type="text" name="padre_nombre" value="{{ p.nombre or '' }}" maxlength="120" autocomplete="name" placeholder="Ej. María Culqui">
+          </div>
+          <div class="campo">
+            <label for="padre-parentesco-{{ loop.index }}">Parentesco</label>
+            <select id="padre-parentesco-{{ loop.index }}" name="padre_parentesco">
+              <option value="">Selecciona</option>
+              {% for parentesco in ['Madre', 'Padre', 'Apoderado/a', 'Abuelo/a', 'Tío/a', 'Otro'] %}
+                <option value="{{ parentesco }}" {{ 'selected' if p.parentesco == parentesco }}>{{ parentesco }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="campo">
+            <label for="padre-telefono-{{ loop.index }}">Teléfono</label>
+            <input id="padre-telefono-{{ loop.index }}" type="tel" name="padre_telefono" value="{{ p.telefono or '' }}" maxlength="30" autocomplete="tel" placeholder="Ej. 987 654 321">
+          </div>
+          <div class="campo">
+            <label for="padre-dni-{{ loop.index }}">DNI</label>
+            <input id="padre-dni-{{ loop.index }}" type="text" name="padre_dni" value="{{ p.dni or '' }}" maxlength="8" inputmode="numeric" data-dni placeholder="Opcional">
+          </div>
+          <div class="campo">
+            <span class="ayuda" aria-hidden="true">&nbsp;</span>
+            <button class="btn btn-peligro btn-icono" type="button" data-quitar-padre aria-label="Quitar apoderado" title="Quitar">
+              <svg class="icono" aria-hidden="true"><use href="#i-eliminar"></use></svg>
+            </button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <p class="ayuda margen-arriba">Puedes registrar hasta los apoderados que necesites. El teléfono se usará para contactar a la familia.</p>
+  </section>
+
+  <div class="acciones-form">
+    <a class="btn btn-fantasma" href="{{ url_for('estudiante_detalle', estudiante_id=estudiante.get('id')) if modo == 'editar' else url_for('estudiantes') }}">Cancelar</a>
+    <button class="btn btn-primario" type="submit">
+      <svg class="icono" aria-hidden="true"><use href="#i-guardar"></use></svg>
+      {{ 'Guardar cambios' if modo == 'editar' else 'Registrar estudiante' }}
+    </button>
+  </div>
+</form>
+
+<template id="plantilla-padre">
+  <div class="padre-fila">
+    <div class="campo">
+      <label>Nombre completo</label>
+      <input type="text" name="padre_nombre" maxlength="120" autocomplete="name" placeholder="Ej. María Culqui">
+    </div>
+    <div class="campo">
+      <label>Parentesco</label>
+      <select name="padre_parentesco">
+        <option value="">Selecciona</option>
+        <option value="Madre">Madre</option>
+        <option value="Padre">Padre</option>
+        <option value="Apoderado/a">Apoderado/a</option>
+        <option value="Abuelo/a">Abuelo/a</option>
+        <option value="Tío/a">Tío/a</option>
+        <option value="Otro">Otro</option>
+      </select>
+    </div>
+    <div class="campo">
+      <label>Teléfono</label>
+      <input type="tel" name="padre_telefono" maxlength="30" autocomplete="tel" placeholder="Ej. 987 654 321">
+    </div>
+    <div class="campo">
+      <label>DNI</label>
+      <input type="text" name="padre_dni" maxlength="8" inputmode="numeric" data-dni placeholder="Opcional">
+    </div>
+    <div class="campo">
+      <span class="ayuda" aria-hidden="true">&nbsp;</span>
+      <button class="btn btn-peligro btn-icono" type="button" data-quitar-padre aria-label="Quitar apoderado" title="Quitar">
+        <svg class="icono" aria-hidden="true"><use href="#i-eliminar"></use></svg>
+      </button>
+    </div>
+  </div>
+</template>
+{% endblock %}

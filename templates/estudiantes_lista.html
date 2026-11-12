@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block titulo %}Estudiantes{% endblock %}
+
+{% block contenido %}
+<div class="barra-lista">
+  <div>
+    <h1>Estudiantes</h1>
+    <p>Registro de estudiantes de 1.° a 5.° grado y sus apoderados.</p>
+  </div>
+  <div class="fila">
+    <a class="btn btn-contorno" href="{{ url_for('exportar_estudiantes') }}">
+      <svg class="icono" aria-hidden="true"><use href="#i-descargar"></use></svg>
+      Exportar CSV
+    </a>
+    <a class="btn btn-primario" href="{{ url_for('estudiante_nuevo') }}">
+      <svg class="icono" aria-hidden="true"><use href="#i-mas"></use></svg>
+      Nuevo estudiante
+    </a>
+  </div>
+</div>
+
+<form class="filtros" method="get" action="{{ url_for('estudiantes') }}">
+  <div class="campo">
+    <label for="f-grado">Grado</label>
+    <select id="f-grado" name="grado" data-auto-submit>
+      <option value="">Todos</option>
+      {% for g in GRADOS %}
+        <option value="{{ g }}" {{ 'selected' if grado == g }}>{{ g }}.° grado</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="campo">
+    <label for="f-seccion">Sección</label>
+    <select id="f-seccion" name="seccion" data-auto-submit>
+      <option value="">Todas</option>
+      {% for s in SECCIONES %}
+        <option value="{{ s }}" {{ 'selected' if seccion == s }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="campo campo-buscar">
+    <label for="f-q">Buscar</label>
+    <input id="f-q" type="search" name="q" value="{{ q }}" placeholder="Nombre, apellidos o DNI">
+  </div>
+  <button class="btn btn-secundario" type="submit">
+    <svg class="icono" aria-hidden="true"><use href="#i-buscar"></use></svg>
+    Filtrar
+  </button>
+  {% if grado or seccion or q %}
+    <a class="btn btn-fantasma" href="{{ url_for('estudiantes') }}">Limpiar</a>
+  {% endif %}
+</form>
+
+<div class="barra-lista">
+  <p class="contador"><strong>{{ estudiantes|length }}</strong> estudiante{{ 's' if estudiantes|length != 1 }} encontrado{{ 's' if estudiantes|length != 1 }}</p>
+</div>
+
+{% if estudiantes %}
+  <div class="tabla-envoltura">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Estudiante</th>
+          <th>DNI</th>
+          <th>Grado / sección</th>
+          <th>Apoderado</th>
+          <th class="celda-acciones">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in estudiantes %}
+          <tr>
+            <td class="celda-nombre">
+              <div class="celda-persona">
+                <span class="avatar avatar-sm avatar-suave" aria-hidden="true">{{ e|iniciales }}</span>
+                <span>
+                  <strong>{{ e.apellidos }}, {{ e.nombres }}</strong>
+                  <small>
+                    {% if e.total_padres %}
+                      {{ e.total_padres }} apoderado{{ 's' if e.total_padres != 1 }}
+                    {% else %}
+                      Sin apoderado registrado
+                    {% endif %}
+                  </small>
+                </span>
+              </div>
+            </td>
+            <td>{{ e.dni or '—' }}</td>
+            <td><span class="badge sin-nota">{{ e.grado }}.° {{ e.seccion }}</span></td>
+            <td>
+              {% if e.telefono_apoderado %}
+                <a href="tel:{{ e.telefono_apoderado }}">{{ e.telefono_apoderado }}</a>
+              {% else %}
+                <span class="suave">—</span>
+              {% endif %}
+            </td>
+            <td class="celda-acciones">
+              <a class="btn btn-contorno btn-sm" href="{{ url_for('estudiante_detalle', estudiante_id=e.id) }}">Ver ficha</a>
+              <a class="btn btn-fantasma btn-sm btn-icono" href="{{ url_for('estudiante_editar', estudiante_id=e.id) }}" title="Editar" aria-label="Editar a {{ e.nombres }} {{ e.apellidos }}">
+                <svg class="icono" aria-hidden="true"><use href="#i-editar"></use></svg>
+              </a>
+              <form method="post" action="{{ url_for('estudiante_eliminar', estudiante_id=e.id) }}" style="display:inline" data-confirmar="¿Eliminar a {{ e.nombres }} {{ e.apellidos }}? Se borrarán también sus notas, asistencia, comportamiento y faltas.">
+                <button class="btn btn-peligro btn-sm btn-icono" type="submit" title="Eliminar" aria-label="Eliminar a {{ e.nombres }} {{ e.apellidos }}">
+                  <svg class="icono" aria-hidden="true"><use href="#i-eliminar"></use></svg>
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <section class="panel">
+    <div class="vacio">
+      <div class="vacio-icono">
+        <svg class="icono" aria-hidden="true"><use href="#i-usuarios"></use></svg>
+      </div>
+      {% if grado or seccion or q %}
+        <h3>No se encontraron estudiantes</h3>
+        <p>Prueba con otro grado, sección o término de búsqueda.</p>
+        <a class="btn btn-contorno" href="{{ url_for('estudiantes') }}">Ver todos</a>
+      {% else %}
+        <h3>Aún no hay estudiantes registrados</h3>
+        <p>Registra al primer estudiante de tu aula para comenzar a usar calificaciones, asistencia y convivencia.</p>
+        <div class="fila">
+          <a class="btn btn-primario" href="{{ url_for('estudiante_nuevo') }}">
+            <svg class="icono" aria-hidden="true"><use href="#i-mas"></use></svg>
+            Registrar estudiante
+          </a>
+          <a class="btn btn-contorno" href="{{ url_for('escaner') }}">
+            <svg class="icono" aria-hidden="true"><use href="#i-escaner"></use></svg>
+            Escanear DNI
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block titulo %}Calificaciones{% endblock %}
+
+{% block contenido %}
+<div class="barra-lista">
+  <div>
+    <h1>Calificaciones</h1>
+    <p>Registro de notas por competencia y bimestre (CNEB).</p>
+  </div>
+  <a class="btn btn-contorno" href="{{ url_for('estudiantes') }}">
+    <svg class="icono" aria-hidden="true"><use href="#i-usuarios"></use></svg>
+    Ver estudiantes
+  </a>
+</div>
+
+{% if sin_datos %}
+  <section class="panel">
+    <div class="vacio">
+      <div class="vacio-icono"><svg class="icono" aria-hidden="true"><use href="#i-notas"></use></svg></div>
+      <h3>Aún no hay estudiantes para calificar</h3>
+      <p>Primero registra a tus estudiantes y luego podrás ingresar sus calificaciones por competencia y bimestre.</p>
+      <a class="btn btn-primario" href="{{ url_for('estudiante_nuevo') }}">
+        <svg class="icono" aria-hidden="true"><use href="#i-mas"></use></svg>
+        Registrar estudiante
+      </a>
+    </div>
+  </section>
+{% else %}
+  <form class="filtros" method="get" action="{{ url_for('calificaciones') }}">
+    <div class="campo">
+      <label for="c-grado">Grado</label>
+      <select id="c-grado" name="grado" data-auto-submit>
+        {% for g in GRADOS %}
+          <option value="{{ g }}" {{ 'selected' if grado == g }}>{{ g }}.° grado</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="campo">
+      <label for="c-seccion">Sección</label>
+      <select id="c-seccion" name="seccion" data-auto-submit>
+        {% for s in SECCIONES %}
+          <option value="{{ s }}" {{ 'selected' if seccion == s }}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="campo">
+      <label for="c-bimestre">Bimestre</label>
+      <select id="c-bimestre" name="bimestre" data-auto-submit>
+        {% for b in BIMESTRES %}
+          <option value="{{ b }}" {{ 'selected' if bimestre == b }}>{{ b }}.° bimestre</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-secundario" type="submit">
+      <svg class="icono" aria-hidden="true"><use href="#i-buscar"></use></svg>
+      Ver
+    </button>
+  </form>
+
+  {% if estudiantes %}
+    <div class="leyenda">
+      <span class="badge nota-ad">AD · Logro destacado</span>
+      <span class="badge nota-a">A · Logro esperado</span>
+      <span class="badge nota-b">B · En proceso</span>
+      <span class="badge nota-c">C · En inicio</span>
+    </div>
+
+    {% set total_celdas = estudiantes|length * COMPETENCIAS|length %}
+    <div class="avance">
+      <span><strong>{{ notas|length }}</strong> de {{ total_celdas }} calificaciones registradas</span>
+      <div class="progreso" role="img" aria-label="{{ (notas|length / total_celdas * 100)|round(0) if total_celdas else 0 }}% de avance">
+        <span style="width: {{ (notas|length / total_celdas * 100)|round(0) if total_celdas else 0 }}%"></span>
+      </div>
+      <strong>{{ (notas|length / total_celdas * 100)|round(0) if total_celdas else 0 }}%</strong>
+    </div>
+
+    <form method="post" action="{{ url_for('calificaciones') }}">
+      <input type="hidden" name="grado" value="{{ grado }}">
+      <input type="hidden" name="seccion" value="{{ seccion }}">
+      <input type="hidden" name="bimestre" value="{{ bimestre }}">
+
+      <div class="tabla-envoltura">
+        <table class="tabla tabla-notas">
+          <thead>
+            <tr>
+              <th class="competencia">Estudiante</th>
+              {% for c in COMPETENCIAS %}
+                <th class="competencia">
+                  {{ c.nombre }}
+                  <small>{{ c.descripcion }}</small>
+                </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in estudiantes %}
+              <tr>
+                <td class="celda-nombre">
+                  <div class="celda-persona">
+                    <span class="avatar avatar-sm avatar-suave" aria-hidden="true">{{ e|iniciales }}</span>
+                    <span>
+                      <strong>{{ e.apellidos }}, {{ e.nombres }}</strong>
+                      <small>{{ e.grado }}.° {{ e.seccion }}{% if e.dni %} · DNI {{ e.dni }}{% endif %}</small>
+                    </span>
+                  </div>
+                </td>
+                {% for c in COMPETENCIAS %}
+                  {% set nota = notas.get(e.id ~ ':' ~ c.codigo, '') %}
+                  <td>
+                    <select
+                      class="nota-select {{ 'nota-' ~ nota|lower if nota }}"
+                      name="nota_{{ e.id }}_{{ c.codigo }}"
+                      aria-label="Nota de {{ e.nombres }} {{ e.apellidos }} en {{ c.nombre }}"
+                    >
+                      <option value="">—</option>
+                      {% for clave in NOTAS %}
+                        <option value="{{ clave }}" {{ 'selected' if nota == clave }}>{{ clave }}</option>
+                      {% endfor %}
+                    </select>
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="acciones-form">
+        <p class="ayuda" style="margin-right: auto">Deja una nota en blanco (—) para borrarla. Se guarda solo el bimestre seleccionado.</p>
+        <button class="btn btn-primario" type="submit">
+          <svg class="icono" aria-hidden="true"><use href="#i-guardar"></use></svg>
+          Guardar calificaciones
+        </button>
+      </div>
+    </form>
+  {% else %}
+    <section class="panel">
+      <div class="vacio">
+        <div class="vacio-icono"><svg class="icono" aria-hidden="true"><use href="#i-usuarios"></use></svg></div>
+        <h3>No hay estudiantes en {{ grado }}.° {{ seccion }}</h3>
+        <p>Cambia de grado o sección, o registra estudiantes en esta sección para comenzar a calificar.</p>
+        <div class="fila">
+          <a class="btn btn-contorno" href="{{ url_for('estudiantes', grado=grado, seccion=seccion) }}">Ver estudiantes</a>
+          <a class="btn btn-primario" href="{{ url_for('estudiante_nuevo') }}">
+            <svg class="icono" aria-hidden="true"><use href="#i-mas"></use></svg>
+            Registrar estudiante
+          </a>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+{% endif %}
+{% endblock %}
